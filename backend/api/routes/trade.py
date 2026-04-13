@@ -26,6 +26,11 @@ def list_trade_flows(
         filters.append("ncm = ?")
         params.append(ncm)
 
+    # Solo exportaciones agregadas (sin país): chart "Exportaciones AR"
+    filters.append("flow_type = 'export'")
+    filters.append("country_dest IS NULL")
+    filters.append("country_origin IS NULL")
+
     where = " AND ".join(filters)
     with get_conn() as conn:
         rows = conn.execute(
@@ -106,27 +111,53 @@ def trade_partners(
     top: int              = Query(default=10, ge=1, le=50),
 ):
     """
-    Top países por valor de exportaciones/importaciones de un commodity,
-    para un año dado. Agrega todos los capítulos NCM del commodity.
-    Fuente: comex_ied (datos anuales bilaterales).
+    Top países por valor de exportaciones/importaciones de un commodity, año dado.
+    Prioridad: datos mensuales 'indec_local' (si existen para el año solicitado)
+               → fallback: datos anuales 'comex_ied'.
     """
-    flow_type = "export" if flow == "export" else "import"
+    flow_type   = "export" if flow == "export" else "import"
     country_col = "country_dest" if flow_type == "export" else "country_origin"
 
-    filters = [
-        "source = 'comex_ied'",
-        "flow_type = ?",
-        "period = ?",
-        f"{country_col} IS NOT NULL",
-    ]
-    params: list = [flow_type, str(year)]
-
-    if commodity:
-        filters.append("commodity_id = ?")
-        params.append(commodity)
-
-    where = " AND ".join(filters)
     with get_conn() as conn:
+        # Verificar si hay datos mensuales locales para el año pedido
+        check_params: list = [f"{year}-%"]
+        if commodity:
+            check_params.append(commodity)
+        has_monthly = conn.execute(
+            f"""
+            SELECT COUNT(*) FROM trade_flows
+            WHERE source = 'indec_local'
+              AND period LIKE ?
+              AND flow_type = '{flow_type}'
+              {("AND commodity_id = ?" if commodity else "")}
+            """,
+            check_params,
+        ).fetchone()[0] > 0
+
+        if has_monthly:
+            # Datos mensuales: sumar todos los meses del año
+            filters = [
+                "source = 'indec_local'",
+                "flow_type = ?",
+                "period LIKE ?",
+                f"{country_col} IS NOT NULL",
+            ]
+            params: list = [flow_type, f"{year}-%"]
+        else:
+            # Fallback: datos anuales comex_ied
+            filters = [
+                "source = 'comex_ied'",
+                "flow_type = ?",
+                "period = ?",
+                f"{country_col} IS NOT NULL",
+            ]
+            params = [flow_type, str(year)]
+
+        if commodity:
+            filters.append("commodity_id = ?")
+            params.append(commodity)
+
+        where = " AND ".join(filters)
         rows = conn.execute(
             f"""
             SELECT {country_col} AS country,

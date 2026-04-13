@@ -52,6 +52,9 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
   const color     = T.colors[commodityId] ?? T.blue
   const chartData = data.map((p) => ({ date: p.date, price: p.price }))
 
+  // Ticks homogéneos: primer día de cada mes (o cada 2 semanas para 30d)
+  const tickDates = computeTicks(chartData.map(d => d.date), days)
+
   return (
     <div
       style={{
@@ -144,9 +147,9 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
             />
             <XAxis
               dataKey="date"
+              ticks={tickDates}
+              tickFormatter={formatTickDate}
               tick={{ fill: T.muted, fontSize: 11, fontFamily: T.mono }}
-              tickFormatter={(v: string) => v.slice(5)}
-              interval="preserveStartEnd"
               axisLine={false}
               tickLine={false}
             />
@@ -191,4 +194,53 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
       )}
     </div>
   )
+}
+
+// ─── Helpers de ticks ────────────────────────────────────────────────────────
+
+const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+
+/**
+ * Devuelve las fechas exactas del dataset que corresponden al primer dato
+ * de cada mes (o cada ~2 semanas si days ≤ 45). Así los ticks son homogéneos
+ * y siempre caen sobre puntos reales del gráfico.
+ */
+function computeTicks(dates: string[], days: number): string[] {
+  if (dates.length === 0) return []
+
+  if (days <= 45) {
+    // Cada ~7 días: primer dato de cada semana ISO
+    const seen = new Set<string>()
+    return dates.filter(d => {
+      const week = getISOWeek(d)
+      if (seen.has(week)) return false
+      seen.add(week)
+      return true
+    })
+  }
+
+  // Mensual: primer dato disponible de cada mes
+  const seen = new Set<string>()
+  return dates.filter(d => {
+    const ym = d.slice(0, 7)   // 'YYYY-MM'
+    if (seen.has(ym)) return false
+    seen.add(ym)
+    return true
+  })
+}
+
+function getISOWeek(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const jan4 = new Date(d.getFullYear(), 0, 4)
+  const startOfWeek1 = new Date(jan4)
+  startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7))
+  const diff = d.getTime() - startOfWeek1.getTime()
+  const week = Math.floor(diff / (7 * 86_400_000)) + 1
+  return `${d.getFullYear()}-W${week}`
+}
+
+function formatTickDate(dateStr: string): string {
+  const [y, m] = dateStr.split('-')
+  const month = MONTHS_ES[parseInt(m) - 1] ?? m
+  return `${month} ${y.slice(2)}`
 }

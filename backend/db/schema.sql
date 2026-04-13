@@ -51,8 +51,14 @@ CREATE TABLE IF NOT EXISTS companies (
     role         TEXT,                  -- 'producer', 'trader', 'processor', 'miner'
     is_ar_actor  BOOLEAN DEFAULT 0,     -- tiene operaciones en Argentina
     notes        TEXT,
-    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(commodity_id, name)
 );
+
+-- Índice único para prevenir duplicados en re-runs de init_db
+-- Nota: en DB existentes con duplicados, este índice fallará hasta que se limpien.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_unique ON companies(commodity_id, name);
+CREATE INDEX IF NOT EXISTS idx_companies_commodity ON companies(commodity_id);
 
 -- ------------------------------------------------------------
 -- Valuación de empresas (precio de acción + métricas)

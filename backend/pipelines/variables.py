@@ -126,43 +126,53 @@ class RetencionesPipeline(BasePipeline):
     """
 
     # (commodity_id, variable_name, fecha_vigencia, valor_pct, nota_decreto)
+    # Valores históricos + vigentes a abril 2026 (Decreto 877/2025)
     RETENCIONES: list[tuple] = [
-        # Soja
-        # Resolución 125/2008 → suspendida; vigente desde Decreto 230/2020
+        # ── Soja ──────────────────────────────────────────────────────────────
         ("soy",     "retenciones_soja",    "2020-09-01", 33.0,
-         "Decreto 230/2020 – porotos de soja (posición 1201.90.00)"),
+         "Decreto 230/2020 – porotos de soja 33% (histórico)"),
+        ("soy",     "retenciones_soja",    "2025-01-27", 26.0,
+         "Decreto 38/2025 – soja 26% temporal (ene-jun 2025)"),
+        ("soy",     "retenciones_soja",    "2025-12-12", 24.0,
+         "Decreto 877/2025 – soja 24% permanente (vigente abr 2026)"),
 
-        # Oro
-        # Res. 61/2022 – derechos de exportación para oro en bruto/semielaborado
+        # ── Oro ───────────────────────────────────────────────────────────────
         ("gold",    "retenciones_oro",     "2022-01-01", 12.0,
-         "Res. 61/2022 – oro en bruto/semielaborado (posición 7108.12/13)"),
+         "Res. 61/2022 – oro en bruto/semielaborado 12% (histórico)"),
+        ("gold",    "retenciones_oro",     "2025-08-01",  0.0,
+         "Decreto 563/2025 – oro 0% permanente. Minería no ferrosa exenta."),
 
-        # Litio
-        # Decreto 206/2023 – litio (carbonato e hidróxido)
-        # Tasa diferencial para incentivar valor agregado local
+        # ── Litio ─────────────────────────────────────────────────────────────
         ("lithium", "retenciones_litio",   "2023-06-01",  4.5,
-         "Decreto 206/2023 – carbonato/hidróxido de litio (posiciones 2836.91 / 2825.20)"),
+         "Decreto 206/2023 / vigente – carbonato/hidróxido litio 4,5% (sin cambios bajo Milei)"),
 
-        # Cobre
-        # Res. Gral. ARCA – metales no ferrosos, tasa general minería
+        # ── Cobre ─────────────────────────────────────────────────────────────
         ("copper",  "retenciones_cobre",   "2021-01-01",  3.0,
-         "Res. Gral. ARCA – cobre y sus manufacturas (cap. NCM 74), tasa general minería no ferrosa"),
+         "Res. Gral. ARCA – cobre cap.74, 3% (histórico)"),
+        ("copper",  "retenciones_cobre",   "2025-08-01",  0.0,
+         "Decreto 563/2025 – cobre y metales no ferrosos 0% permanente."),
 
-        # Gas Natural
-        # Suspendidas para incentivar inversión en no-convencionales (Vaca Muerta)
-        # Decreto 929/2013 y modificatorios – beneficio exportaciones shale
+        # ── Gas Natural ───────────────────────────────────────────────────────
         ("natgas",  "retenciones_gas",     "2013-07-01",  0.0,
-         "Decreto 929/2013 – gas natural exportado, suspensión DEX para incentivar Vaca Muerta"),
+         "Decreto 929/2013 – gas exportado, DEX suspendidos para Vaca Muerta (histórico)"),
+        ("natgas",  "retenciones_gas",     "2024-01-01",  8.0,
+         "Vigente abr 2026: gas natural 8% fija (hidrocarburos no convencionales, Vaca Muerta)"),
 
-        # Trigo
-        # Decreto 230/2020 – granos (trigo pan y candeal)
+        # ── Trigo ─────────────────────────────────────────────────────────────
         ("wheat",   "retenciones_trigo",   "2020-09-01", 12.0,
-         "Decreto 230/2020 – trigo pan y candeal (posición NCM cap. 10)"),
+         "Decreto 230/2020 – trigo 12% (histórico)"),
+        ("wheat",   "retenciones_trigo",   "2025-01-27",  9.5,
+         "Decreto 38/2025 – trigo 9,5% temporal (ene-jun 2025)"),
+        ("wheat",   "retenciones_trigo",   "2025-12-12",  7.5,
+         "Decreto 877/2025 – trigo 7,5% permanente (vigente abr 2026)"),
 
-        # Maíz
-        # Decreto 230/2020 – granos (maíz amarillo y otros)
+        # ── Maíz ──────────────────────────────────────────────────────────────
         ("corn",    "retenciones_maiz",    "2020-09-01", 12.0,
-         "Decreto 230/2020 – maíz (posición NCM 10.05), alícuota 12%"),
+         "Decreto 230/2020 – maíz 12% (histórico)"),
+        ("corn",    "retenciones_maiz",    "2025-01-27",  9.5,
+         "Decreto 38/2025 – maíz 9,5% temporal (ene-jun 2025)"),
+        ("corn",    "retenciones_maiz",    "2025-12-12",  8.5,
+         "Decreto 877/2025 – maíz 8,5% permanente (vigente abr 2026)"),
     ]
 
     def __init__(self):

@@ -17,7 +17,7 @@ interface Props {
   nameEs: string
 }
 
-const YEARS = [2024, 2023, 2022, 2021, 2020]
+const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020]
 
 function fmt(v: number): string {
   if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}bn`
@@ -27,7 +27,7 @@ function fmt(v: number): string {
 
 export function TradePartnersChart({ commodityId, nameEs }: Props) {
   const [data, setData]     = useState<TradePartner[]>([])
-  const [year, setYear]     = useState(2024)
+  const [year, setYear]     = useState(2025)
   const [flow, setFlow]     = useState<'export' | 'import'>('export')
   const [loading, setLoading] = useState(true)
 
