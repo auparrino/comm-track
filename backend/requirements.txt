@@ -1,0 +1,27 @@
+# Pisubí — Backend dependencies
+
+# Data / Finance
+yfinance>=0.2.38
+pandas>=2.0.0
+requests>=2.31.0
+feedparser>=6.0.11
+
+# Web scraping
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+# playwright>=1.40.0   # descomentar cuando sea necesario para JS-heavy sites
+
+# API
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.0.0
+
+# LLM (interfaz compatible OpenAI para Groq/Cerebras/Mistral)
+openai>=1.30.0
+
+# FRED (opcional, wraps FRED API)
+# fredapi>=0.5.1   # alternativa: usar requests directo
+
+# Utils
+python-dotenv>=1.0.0
+schedule>=1.2.0   # para cron en desarrollo local

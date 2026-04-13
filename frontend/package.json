@@ -1,0 +1,27 @@
+{
+  "name": "pisubi-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "https://auparrino.github.io/comm-track",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build:ghpages": "tsc && cross-env DEPLOY_TARGET=ghpages vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build:ghpages && gh-pages -d dist"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "cross-env": "^7.0.3",
+    "gh-pages": "^6.1.1",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.2"
+  }
+}
