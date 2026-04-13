@@ -8,7 +8,6 @@ import { TradeFlowChart } from './TradeFlowChart'
 import { CompanyValuationPanel } from './CompanyValuationPanel'
 import { NewsPanel } from './NewsPanel'
 import { ImpactRadar } from './ImpactRadar'
-import { WeeklySummary } from './WeeklySummary'
 import { AlertBanner } from './AlertBanner'
 import { TradePartnersChart } from './TradePartnersChart'
 import { AdminPanel } from './AdminPanel'
@@ -167,7 +166,7 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* Resumen semanal LLM + Socios comerciales */}
+        {/* Socios comerciales + variables de contexto */}
         {current && (
           <div
             style={{
@@ -177,22 +176,15 @@ export function Dashboard() {
               marginBottom: 20,
             }}
           >
-            <WeeklySummary commodityId={current.id} />
             <TradePartnersChart
               commodityId={current.id}
               nameEs={current.name_es}
             />
-          </div>
-        )}
-
-        {/* Variables de contexto (full width) */}
-        {current && (
-          <div style={{ marginBottom: 20 }}>
             <ImpactRadar commodityId={current.id} />
           </div>
         )}
 
-        {/* 2 columnas: empresas + noticias */}
+        {/* 2 columnas: empresas + análisis/noticias */}
         {current && (
           <div
             style={{

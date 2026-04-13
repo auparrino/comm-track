@@ -73,8 +73,12 @@ export function TradeFlowChart({ commodityId, nameEs }: Props) {
   const ncmLabels = NCM_LABELS[commodityId] ?? {}
   const ncmCodes  = Object.keys(ncmLabels)
 
+  // Solo períodos mensuales (YYYY-MM) — los anuales ('2025','2026') vienen del
+  // pipeline bilateral y no deben mezclarse en este gráfico mensual.
+  const monthlyFlows = flows.filter(f => /^\d{4}-\d{2}$/.test(f.period))
+
   const byPeriod: Record<string, Record<string, number>> = {}
-  for (const f of flows) {
+  for (const f of monthlyFlows) {
     if (!byPeriod[f.period]) byPeriod[f.period] = {}
     byPeriod[f.period][`ncm_${f.ncm}`] = (f.value_usd ?? 0)
   }
@@ -85,8 +89,8 @@ export function TradeFlowChart({ commodityId, nameEs }: Props) {
     ...byPeriod[period],
   }))
 
-  // Total acumulado en el rango
-  const totalUSD = flows.reduce((acc, f) => acc + (f.value_usd ?? 0), 0)
+  // Total acumulado en el rango (solo registros mensuales)
+  const totalUSD = monthlyFlows.reduce((acc, f) => acc + (f.value_usd ?? 0), 0)
 
   const accentColor = T.colors[commodityId] ?? T.blue
 
