@@ -18,8 +18,9 @@ backend/db/*.db
 backend/db/*.db-shm
 backend/db/*.db-wal
 
-# Data descargada
-data/
+# Data descargada (excepto ZIPs INDEC que van al repo)
+data/*
+!data/comex_indec
 
 # Node
 frontend/node_modules/

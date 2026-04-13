@@ -19,6 +19,9 @@ python -m backend.pipelines.comex --months 36 || echo "[startup] comex: error pa
 echo "[startup] Descargando comercio bilateral..."
 python -m backend.pipelines.comex_bilateral || echo "[startup] comex_bilateral: error parcial, continuando"
 
+echo "[startup] Procesando datos INDEC mensuales (ZIPs bilaterales 2020-2026)..."
+python -m backend.pipelines.comex_indec || echo "[startup] comex_indec: error parcial, continuando"
+
 echo "[startup] Descargando noticias y clasificando con LLM..."
 python -m backend.pipelines.news || echo "[startup] news: error parcial, continuando"
 
