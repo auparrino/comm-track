@@ -87,7 +87,7 @@ export function Dashboard() {
               color: T.text,
             }}
           >
-            Pisubí
+            Comm-Track
           </div>
           <div style={{ color: T.muted, fontSize: 12 }}>
             Monitor de Commodities · Argentina

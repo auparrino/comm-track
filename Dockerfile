@@ -14,9 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Código
 COPY . .
 
-# Inicializar DB si no existe
-RUN python -c "from backend.db.init_db import init_db; init_db()"
-
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["bash", "startup.sh"]

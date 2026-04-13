@@ -1,5 +1,5 @@
 // En desarrollo: proxy vite → localhost:8000
-// En producción: VITE_API_URL=https://pisubi-backend.fly.dev
+// En producción: VITE_API_URL=https://comm-track-backend.fly.dev
 const BASE = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}`
   : '/api'

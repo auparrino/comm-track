@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: comm-track-backend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: bash startup.sh
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: PYTHONIOENCODING
+        value: utf-8
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    healthCheckPath: /health

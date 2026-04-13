@@ -1,5 +1,5 @@
 /**
- * Pisubí — Paleta editorial
+ * Comm-Track — Paleta editorial
  * Basada en la estética de auparrino.github.io/media-monitor
  * Fondo crema, texto navy, acentos con borde izquierdo.
  */

@@ -8,9 +8,9 @@ from backend.api.routes import commodities, prices, companies, variables, news, 
 from backend.api.routes import admin
 
 app = FastAPI(
-    title="Pisubí — Monitor de Commodities",
+    title="Comm-Track — Monitor de Commodities",
     version="0.1.0",
-    description="API REST para seguimiento de litio, oro y soja con foco en Argentina.",
+    description="API REST para seguimiento de commodities con foco en Argentina.",
 )
 
 app.add_middleware(
@@ -33,4 +33,4 @@ app.include_router(admin.router,       prefix="/admin",             tags=["admin
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "project": "Pisubí"}
+    return {"status": "ok", "project": "Comm-Track"}
