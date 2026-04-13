@@ -5,11 +5,11 @@ Al iniciar una sesión, leé este archivo para saber exactamente dónde continua
 
 ---
 
-## ESTADO ACTUAL: Sesión 9 — COMPLETADA (continuar en Sesión 10)
+## ESTADO ACTUAL: Sesión 10 — COMPLETADA (continuar en Sesión 11)
 
 **Fecha:** 2026-04-12
 **Fase activa:** FASE 4
-**Próxima sesión:** Sesión 10
+**Próxima sesión:** Sesión 11
 
 ---
 
@@ -182,6 +182,32 @@ Monitor de commodities (litio, oro, soja) con:
 - Cron en producción para pipelines (prices, news, summary, alerts)
 - Agregar nuevos commodities: cobre (CU=F), gas natural (NG=F), trigo (ZW=F)
 - Panel de admin para ver/forzar ejecución de pipelines
+
+---
+
+### Sesión 10 — 2026-04-12
+**Completado:**
+- Inicialización repo git + creación repo GitHub: https://github.com/auparrino/comm-track
+- .gitignore: excluye .env, *.db, node_modules, dist, .playwright-mcp, data/
+- frontend/package.json: homepage, scripts build:ghpages + deploy, devDeps gh-pages + cross-env
+- vite.config.ts: base=/comm-track/ cuando DEPLOY_TARGET=ghpages
+- api.ts: VITE_API_URL env var para backend prod (fallback a /api proxy en dev)
+- tsconfig.json: types vite/client para import.meta.env
+- .github/workflows/deploy-frontend.yml: CI auto-deploy en push a master (paths: frontend/**)
+- Build + deploy a gh-pages: https://auparrino.github.io/comm-track/ (Status: built)
+
+**Notas de Sesión 10:**
+- Frontend en GH Pages apunta a https://comm-track-backend.fly.dev (backend aún no deployado)
+  → La app carga pero sin datos hasta que el backend esté live
+- Para actualizar la URL del backend: ir a repo Settings → Variables → VITE_API_URL → editar
+  El workflow de CI toma la variable automáticamente en el próximo push
+- Para re-deployar manualmente: cd frontend && DEPLOY_TARGET=ghpages VITE_API_URL=https://... npm run deploy
+- flyctl no instalado — instalarlo con: winget install flyctl (o scoop install flyctl)
+
+**Pendiente para Sesión 11:**
+- Instalar flyctl y deployar backend en Fly.io
+- Setear VITE_API_URL en GitHub repo vars → Actions re-deploya frontend automáticamente
+- Cron en producción para pipelines (prices diario, news cada 6h, summary/alerts semanal)
 
 ---
 
