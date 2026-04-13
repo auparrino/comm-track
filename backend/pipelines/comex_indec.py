@@ -29,26 +29,24 @@ from backend.pipelines.base_pipeline import BasePipeline
 
 # ─── Rutas a los archivos locales ────────────────────────────────────────────
 
-COMEX_DIR = Path("C:/Users/augus/OneDrive/Documentos/Comex")
+# Ruta relativa al directorio raíz del proyecto (donde se corre el pipeline)
+COMEX_DIR = Path("data/comex_indec")
 
 PAISES_CSV = COMEX_DIR / "Países.csv"
 
-# exports_YYYY_M.zip → exponmYY.csv
-# imports_YYYY_M.zip → impomYY.csv
-YEAR_FILES = {
-    2024: {
-        "exports": (COMEX_DIR / "exports_2024_M.zip", "exponm24.csv"),
-        "imports": (COMEX_DIR / "imports_2024_M.zip", "impom24.csv"),
-    },
-    2025: {
-        "exports": (COMEX_DIR / "exports_2025_M.zip", "exponm25.csv"),
-        "imports": (COMEX_DIR / "imports_2025_M.zip", "impom25.csv"),
-    },
-    2026: {
-        "exports": (COMEX_DIR / "exports_2026_M.zip", "exponm26.csv"),
-        "imports": (COMEX_DIR / "imports_2026_M.zip", "impom26.csv"),
-    },
-}
+
+def _year_entry(yy: int) -> dict:
+    """Genera la entrada de YEAR_FILES para un año (yy = dos dígitos: 20 → 2020)."""
+    full = 2000 + yy
+    return {
+        "exports": (COMEX_DIR / f"exports_{full}_M.zip", f"exponm{yy:02d}.csv"),
+        "imports": (COMEX_DIR / f"imports_{full}_M.zip", f"impom{yy:02d}.csv"),
+    }
+
+
+# exports_YYYY_M.zip → exponmYY.csv  (bilaterales por NCM 8 dígitos y país destino)
+# imports_YYYY_M.zip → impomYY.csv   (bilaterales por NCM 8 dígitos y país origen)
+YEAR_FILES = {2000 + yy: _year_entry(yy) for yy in range(20, 27)}
 
 # ─── Mapeo NCM → commodity ────────────────────────────────────────────────────
 # Primero se intenta el prefijo de 4 dígitos, luego el de 2.
@@ -213,12 +211,10 @@ class ComexIndecPipeline(BasePipeline):
         """
         A partir de los registros bilaterales (indec_local), genera e inserta
         totales agregados (country_dest/origin = NULL) con source='indec_local_agg'.
+        Cubre exports (filtra country_dest IS NOT NULL) e imports (filtra country_origin IS NOT NULL).
 
         Los NCM de 4 dígitos (ej: 1005 maíz, 1001 trigo) se normalizan a 2 dígitos
         (→ '10') para ser compatibles con el gráfico TradeFlowChart.
-
-        Usa INSERT OR IGNORE: si ya existe un agregado para ese periodo desde otra
-        fuente (p.ej. indec_datos_gob), se conserva el existente (no se duplica).
 
         Retorna la cantidad de nuevos agregados insertados.
         """
@@ -242,8 +238,13 @@ class ComexIndecPipeline(BasePipeline):
                 'indec_local_agg' AS source
             FROM trade_flows
             WHERE source = 'indec_local'
-              AND flow_type = 'export'       -- solo exportaciones (chart "Exportaciones AR")
-              AND country_dest IS NOT NULL    -- solo registros bilaterales con destino conocido
+              AND (
+                  -- exports: requiere país destino conocido
+                  (flow_type = 'export' AND country_dest   IS NOT NULL)
+                  OR
+                  -- imports: requiere país origen conocido
+                  (flow_type = 'import' AND country_origin IS NOT NULL)
+              )
             GROUP BY commodity_id,
                      CASE WHEN LENGTH(ncm) >= 4 THEN SUBSTR(ncm, 1, 2) ELSE ncm END,
                      period, flow_type

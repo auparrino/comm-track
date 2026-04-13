@@ -126,6 +126,14 @@ CREATE TABLE IF NOT EXISTS trade_flows (
 
 CREATE INDEX IF NOT EXISTS idx_trade_commodity_period ON trade_flows(commodity_id, period DESC);
 
+-- Unicidad: (commodity, ncm, periodo, flujo, destino, origen)
+-- COALESCE en ambas columnas nullable para que NULL no colisione entre países distintos.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_trade_unique ON trade_flows(
+    commodity_id, ncm, period, flow_type,
+    COALESCE(country_dest,   ''),
+    COALESCE(country_origin, '')
+);
+
 -- ------------------------------------------------------------
 -- Variables de impacto
 -- ------------------------------------------------------------
