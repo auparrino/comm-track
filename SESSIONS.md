@@ -1,401 +1,197 @@
-# Pisubí — Session Tracker
+# Pisubí / Comm-Track — Session Tracker
 
-Este archivo es el punto de entrada para cada sesión de desarrollo.
-Al iniciar una sesión, leé este archivo para saber exactamente dónde continuar.
+Al iniciar una nueva sesión, leé este archivo. El header dice en qué sesión estás y qué hacer primero.
 
 ---
 
-## ESTADO ACTUAL: Sesión 10 — COMPLETADA (continuar en Sesión 11)
+## ESTADO ACTUAL: Sesión 14 — COMPLETADA (continuar en Sesión 15)
 
-**Fecha:** 2026-04-12
-**Fase activa:** FASE 4
-**Próxima sesión:** Sesión 11
+**Fecha:** 2026-04-13
+**Deploy:** Backend en Render (`render.yaml` + `startup.sh`), Frontend en GitHub Pages
+**Repo:** https://github.com/auparrino/comm-track
+
+---
+
+## PENDIENTE PARA SESIÓN 15
+
+### Prioridad alta
+
+**#1 — Datos 2024 near-zero en TradeFlowChart (Render)**
+- Soja, oro, gas, litio muestran valores ~0 para 2024 en producción. Trigo muestra bien.
+- Datos existen en DB local y la API local los devuelve bien (verificado).
+- Causa probable: la DB de Render no tiene los datos de `comex_indec.py` (ZIPs locales no van a Render).
+- Solución: implementar `comex_comtrade.py` que use UN Comtrade API para datos bilaterales anuales.
+  - Endpoint público sin key: `https://comtradeapi.un.org/public/v1/preview/C/A/HS?reporterCode=32&period=2023&flowCode=X&cmdCode=12&includeDesc=true`
+  - Argentina = reporterCode 32, hasta 500 req/día sin key.
+  - Alternativa: subir la DB local a Render manualmente via Render Shell.
+
+**#10 — Precios históricos desde más atrás**
+- `prices.py`: agregar flag `--full-history` que use `start="1990-01-01"` en yfinance.
+- Nuevo pipeline `worldbank_prices.py` (World Bank Pink Sheet mensual desde ~1960).
+- `PriceChart.tsx`: agregar selector de rango 1A / 5A / 10A / Máx.
+
+### Ya resuelto localmente, pendiente de deploy
+- Bug #2 (imports solo Brasil): UNIQUE index corregido, datos locales OK con 73 países.
+- `comex_indec.py`: ZIPs 2020-2026 procesados, 23,882 registros bilaterales.
+- Estos cambios están en `master`. Render re-deploya en el próximo push.
+
+### Roadmap completo de sesiones 15–24
+Ver archivo `MEJORAS.md` (fases A–G con detalle de cada feature).
 
 ---
 
 ## RESUMEN DEL PROYECTO
 
-Monitor de commodities (litio, oro, soja) con:
-- Backend: Python + FastAPI + SQLite
-- Pipelines: precios (yfinance, BCRA, FRED), noticias (RSS + scraping), comercio (INDEC), variables
-- IA: Cerebras / Mistral / Groq (rotación, no Anthropic)
-- Frontend: React + TypeScript + Recharts
-- Extra: valuación de empresas vinculadas a cada commodity (tickers bursátiles)
+Monitor de commodities de Argentina (litio, oro, soja, trigo, maíz, cobre, gas natural).
 
----
-
-## CHECKLIST POR FASE
-
-### FASE 1 — Fundación (Semanas 1-2)
-- [x] Crear estructura de directorios
-- [x] Schema SQLite (con tabla `company_valuations`)
-- [x] Script init_db.py + seed de commodities/actores
-- [x] Pipeline de precios: yfinance (commodities + acciones de empresas)
-- [x] Pipeline de precios: BCRA
-- [x] Pipeline de precios: FRED
-- [x] API FastAPI: endpoints /prices /commodities /companies /impact-variables
-- [x] Frontend: Dashboard con 3 CommodityCards
-- [x] Frontend: PriceChart (recharts)
-- [x] Frontend: CompanyValuationPanel
-
-### FASE 2 — Inteligencia (Semanas 3-4)
-- [x] Scraper RSS (Mining.com, Kitco, Ámbito, Bichos de Campo)
-- [ ] Scraper sitios sin RSS
-- [x] Clasificador de noticias (Groq/Mistral/Cerebras — rotación con fallback)
-- [x] Frontend: NewsPanel con filtros
-- [x] Pipeline Comex → trade_flows (datos.gob.ar NCM 2 dígitos, mensual)
-- [x] Frontend: TradeFlowChart (barras apiladas por capítulo NCM)
-
-### FASE 3 — Análisis (Semanas 5-6)
-- [x] Pipeline variables: ENSO (NOAA ONI), retenciones AR (AFIP/decreto)
-- [x] Frontend: ImpactRadar (panel de variables con cards)
-- [ ] Frontend: SupplyChainGraph
-- [ ] Resumen semanal automático (LLM)
-- [ ] Alertas de señales de alto impacto
-- [x] Mobile responsive (useIsMobile hook, grids adaptativos)
-- [x] Resumen semanal automático (LLM, endpoint /summary, componente WeeklySummary)
-- [x] Alertas de señales de alto impacto (pipeline alerts.py, endpoint /alerts, AlertBanner)
-- [x] NCM bilateral desde comex-IED (pipeline comex_bilateral.py, endpoint /partners, TradePartnersChart)
-
-### FASE 4 — Escalamiento (Semanas 7-8)
-- [ ] Agregar: cobre, gas natural, trigo
-- [x] Dockerfile + railway.toml + fly.toml (configurado, pendiente ejecutar)
-- [ ] Deploy backend ejecutado (Railway/Fly.io)
-- [ ] Deploy frontend (GitHub Pages / Vercel)
-- [ ] Cron en producción
-- [ ] Panel de admin para pipelines
-
----
-
-### Sesión 3 — 2026-04-12
-**Completado:**
-- Instalación de deps Python (fastapi, etc.) y npm install del frontend
-- .env con GROQ, CEREBRAS, MISTRAL keys (FRED vacío)
-- Fix % variación en CommodityCards (filtro por price_type correcto por commodity)
-- Fix gráfico vacío en PriceChart (mismo fix de price_type)
-- Proxy de litio: LIT ETF (Global X Lithium) en config.py y prices.py
-- Pipeline prices corrido con --days 90 (456 registros históricos)
-- backend/pipelines/news.py: scraper RSS + clasificador LLM (feedparser + BeautifulSoup)
-- backend/api/routes/news.py: GET /news/ con filtros (commodity, days, sentiment, signal)
-- frontend/src/components/NewsPanel.tsx: panel con badges LLM, filtros, links a fuentes
-- Dashboard: layout 2 columnas (empresas | noticias)
-- Backend corriendo en puerto 8001 (proceso viejo en 8000 no se pudo matar)
-- 46 noticias clasificadas con Groq
-
-**Notas de Sesión 3:**
-- mining.com es feed compartido entre lithium y gold → artículos se guardan bajo `lithium` (primera iteración). En próxima sesión: limpiar duplicados o cambiar lógica para asignar commodity por clasificación LLM
-- Kitco RSS devuelve 404, Benchmark devuelve 403, Ámbito devuelve 403. Feeds activos: mining.com + bichosdecampo.com
-- Backend corre en puerto 8001 (vite proxy apunta a 8001). Para próximas sesiones: matar proceso viejo en 8000 antes de arrancar
-- PYTHONIOENCODING=utf-8 necesario en Windows para los logs del pipeline
-
-**Pendiente para Sesión 4:**
-- Arreglar asignación de commodity en noticias (usar clasificación LLM en vez de commodity del feed)
-- Buscar feeds RSS alternativos para oro y soja que funcionen
-- Pipeline Comex → trade_flows (INDEC)
-- Frontend: TradeFlowMap
-
----
-
-### Sesión 4 — 2026-04-12
-**Completado:**
-- Rediseño estético completo: light mode editorial (crema #FDF0D5 / navy #003049)
-  - Paleta centralizada en frontend/src/utils/theme.ts
-  - Dashboard, CommodityCard, PriceChart, CompanyValuationPanel, NewsPanel rediseñados
-  - Estética consistente con auparrino.github.io/media-monitor y otros proyectos del usuario
-  - Cards con borde izquierdo colored (3px), monospace para precios/tickers, header blanco
-  - Range buttons con fondo pill (cream), activo = navy sólido
-- Fix asignación de commodity en noticias:
-  - news.py _classify_article: si el LLM devuelve un único commodity reconocido, actualiza commodity_id
-  - Si hay múltiples → mantiene el original del feed
-- RSS feeds actualizados en config.py:
-  - Litio: mining.com/web-tag/lithium/feed/ + fallback general
-  - Oro: mining.com/web-tag/gold/feed/ + precious-metals tag
-  - Soja: bichosdecampo.com (✓) + agrositio.com.ar (por verificar)
-
-**Notas de Sesión 4:**
-- Tag feeds de mining.com (WordPress) más específicos que feed general — verificar en sesión 5
-- agrositio.com.ar/feed/ no verificado, puede dar 403; si falla, remover
-- Reclasificación retroactiva de noticias ya guardadas: pendiente flag --reclassify en news.py
-
-**Pendiente para Sesión 5:**
-- Pipeline Comex → trade_flows (INDEC API / archivos CSV)
-- Frontend: TradeFlowMap (mapa o treemap de flujos por NCM)
-- Flag --reclassify en news.py para re-procesar noticias existentes
-- Verificar nuevos feeds RSS
-
----
-
-### Sesión 5 — 2026-04-12
-**Completado:**
-- Tema: `surface` bajado a `#FEF9F0` (blanco cálido, menos contraste vs fondo crema)
-- Feeds RSS verificados: mining.com/web-tag/gold/feed/ → 404 (reemplazado por gold-price/feed/)
-  mining.com/web-tag/precious-metals/feed/ → 404 (removido); agrositio.com.ar → 404 (removido)
-- Diarios económicos AR agregados como `AR_ECONOMIC_FEEDS` en config.py:
-  Ámbito Financiero ✓, El Cronista ✓, iProfesional ✓
-  (Infobae 404, LaNacion 404)
-- Feeds soja mejorados: + El Cronista agro-negocios ✓, Agrofy ✓, Infobae agro ✓
-- news.py: soporte para AR_ECONOMIC_FEEDS (commodity_id=None, LLM asigna)
-- news.py: flag --reclassify [--all] para re-clasificar artículos existentes
-- Pipeline comex.py: descarga datos.gob.ar NCM 2 dígitos mensual (1990-2025-02)
-  Litio: cap.28 (químicos inorgánicos), Oro: cap.71 (metales preciosos),
-  Soja: cap.12 + 15 + 23 (semillas + aceites + harinas)
-  180 registros insertados (36 meses × 5 series)
-- API: GET /trade-flows/ y GET /trade-flows/summary en main.py
-- Frontend: TradeFlowChart.tsx — barras apiladas, range 12/24/36M
-  Integrado en Dashboard al lado del PriceChart (layout 2 columnas)
-- TypeScript: tsc --noEmit sin errores
-
-**Notas de Sesión 5:**
-- Pipeline comex corre en < 1 seg (todo el procesamiento es local tras descarga)
-- Datos INDEC tienen ~30 días de lag (último dato disponible: 2025-02)
-- cap.28 incluye TODOS los químicos inorgánicos, no solo litio → limitación conocida
-- cap.71 incluye oro + plata + piedras preciosas → proxy razonable para oro
-- Fuente: https://datos.gob.ar dataset sspm-exportaciones-segun-nomenclador-comun-mercosur-ncm
-- AR_ECONOMIC_FEEDS guardadas con commodity_id=NULL → requieren --reclassify para aparecer
-  en los paneles de noticias por commodity
-
----
-
-### Sesión 7 — 2026-04-12
-**Completado:**
-- Reclasificación noticias AR: feeds Ámbito/iProfesional siguen en 403, Cronista devuelve 0. Sin artículos pendientes en DB.
-- backend/pipelines/summary.py: genera resumen semanal LLM por commodity
-  Tabla weekly_summaries. 3 resúmenes generados OK con Groq. GET /summary/{commodity_id}
-- backend/pipelines/alerts.py: detecta noticias relevance_score >= 0.7 + impact_direction bullish/bearish
-  Tabla alerts. 6 alertas generadas (3 litio, 3 soja). GET /alerts/
-- backend/pipelines/comex_bilateral.py: lee comex-IED/products.json → 2431 registros bilaterales (80 países)
-  GET /trade-flows/partners?commodity=&year=&flow=
-- frontend/src/components/WeeklySummary.tsx: resumen LLM + key_signals pills
-- frontend/src/components/AlertBanner.tsx: alertas activas amber/blue según severity
-- frontend/src/components/TradePartnersChart.tsx: bar chart horizontal top-10 socios, exp/imp toggle, año
-- Dashboard: AlertBanner, nueva fila WeeklySummary + TradePartnersChart
-- Dockerfile + railway.toml + fly.toml + DEPLOY.md
-- TypeScript: tsc --noEmit sin errores. Smoke test API: todos los endpoints OK.
-
-**Notas de Sesión 7:**
-- comex-IED products.json: datos anuales 2015-2026, 80 países, caps 2 dígitos, valores USD
-- Para deploy en Railway: SQLite sin persistencia → usar Fly.io con volumen o migrar a PostgreSQL
-
-**Pendiente para Sesión 8:**
-- Ejecutar deploy real en Fly.io (flyctl launch → fly volumes create → fly deploy)
-- Deploy frontend en Vercel/GitHub Pages + actualizar proxy en vite.config.ts
-- Cron en producción para pipelines (prices, news, summary, alerts)
-- Agregar nuevos commodities: cobre (CU=F), gas natural (NG=F), trigo (ZW=F)
-- Panel de admin para ver/forzar ejecución de pipelines
-
----
-
-### Sesión 10 — 2026-04-12
-**Completado:**
-- Inicialización repo git + creación repo GitHub: https://github.com/auparrino/comm-track
-- .gitignore: excluye .env, *.db, node_modules, dist, .playwright-mcp, data/
-- frontend/package.json: homepage, scripts build:ghpages + deploy, devDeps gh-pages + cross-env
-- vite.config.ts: base=/comm-track/ cuando DEPLOY_TARGET=ghpages
-- api.ts: VITE_API_URL env var para backend prod (fallback a /api proxy en dev)
-- tsconfig.json: types vite/client para import.meta.env
-- .github/workflows/deploy-frontend.yml: CI auto-deploy en push a master (paths: frontend/**)
-- Build + deploy a gh-pages: https://auparrino.github.io/comm-track/ (Status: built)
-
-**Notas de Sesión 10:**
-- Frontend en GH Pages apunta a https://comm-track-backend.fly.dev (backend aún no deployado)
-  → La app carga pero sin datos hasta que el backend esté live
-- Para actualizar la URL del backend: ir a repo Settings → Variables → VITE_API_URL → editar
-  El workflow de CI toma la variable automáticamente en el próximo push
-- Para re-deployar manualmente: cd frontend && DEPLOY_TARGET=ghpages VITE_API_URL=https://... npm run deploy
-- flyctl no instalado — instalarlo con: winget install flyctl (o scoop install flyctl)
-
-**Pendiente para Sesión 11:**
-- Instalar flyctl y deployar backend en Fly.io
-- Setear VITE_API_URL en GitHub repo vars → Actions re-deploya frontend automáticamente
-- Cron en producción para pipelines (prices diario, news cada 6h, summary/alerts semanal)
-
----
-
-### Sesión 9 — 2026-04-12
-**Completado:**
-- Fix proxy vite.config.ts: ya estaba en 8000 (corregido sesión 8)
-- Fix crítico: config.py no llamaba load_dotenv() → API keys LLM/etc nunca se cargaban
-  Agregado load_dotenv(ROOT/.env) al inicio de config.py — todos los pipelines LLM ahora funcionan
-- YahooMacroPipeline: reemplaza BCRAPipeline (API BCRA v3.0 deprecada 2025)
-  Fuentes vía yfinance sin API key:
-    USDARS=X  → tc_oficial_usd_ars (TC USD/ARS, 248 registros 90 días)
-    DX-Y.NYB  → broad_dollar_idx (ICE Dollar Index proxy DXY)
-    ^IRX      → fed_funds_rate (T-bill 13 semanas, proxy tasa Fed)
-- FREDPipeline: conservado pero se omite si FRED_API_KEY vacío (log claro)
-- ImpactRadar ahora muestra las 5 variables: TC=1370 ARS/USD, DXY=99.1, Fed=3.59%, ENSO=-0.16, Retenciones
-- Fix feeds RSS: copper-price/feed → 200 (copper/feed era 404)
-- news.py: commodities reconocidos extendido a 6 (incluye copper, natgas, wheat)
-  --commodity flag acepta los 6 nuevos valores
-- Reclasificación LLM completa (57 artículos): noticias redistribuidas correctamente
-  copper: 6, gold: 10, lithium: 23, natgas: 7, soy: 11, wheat: 0 (normal, no en mining.com)
-- Alertas re-generadas: lithium 3, gold 3, soy 3, copper 3, natgas 1 (total 13 alertas activas)
-- Resúmenes LLM: 6/6 commodities generados con Groq
-- admin.py + AdminPanel.tsx: ya estaban implementados (sesión previa), descripciones actualizadas
-- TypeScript: tsc --noEmit sin errores
-
-**Estado de datos al cierre de sesión 9:**
-- Precios: 6 commodities + 8 empresas trackeadas con 90 días histórico
-- Variables globales: TC USD/ARS, DXY, Fed Rate, ENSO ONI → todas activas
-- Retenciones: 6 commodities con valores vigentes
-- Noticias: 5 de 6 commodities con noticias clasificadas (wheat: 0, esperado)
-- Alertas: 5 de 6 commodities con alertas activas
-- Resúmenes: 6/6
-
-**Notas de Sesión 9:**
-- BCRAPipeline eliminado del run_all — reemplazado por YahooMacroPipeline
-- FRED sigue disponible si se configura FRED_API_KEY (datos más precisos que yfinance proxy)
-- wheat no tiene noticias en mining.com (es lógico); para trigo usar feeds AR de granos
-  (próxima sesión: agregar feeds específicos de trigo como agrofy, bichosdecampo ya filtran)
-- mining.com copper-price/feed: devuelve 200 pero 0 artículos (feed existe pero está vacío)
-  El feed general de mining.com tiene artículos de cobre que el LLM reclasifica correctamente
-
-### Sesión 8 — 2026-04-12
-**Completado:**
-- Nuevos commodities: cobre (CU=F), gas natural (NG=F), trigo (ZW=F)
-  - config.py: tickers, feeds RSS, company tickers (FCX, SCCO, YPF, TTE, PAM)
-  - init_db.py: seed commodities (supply_chain JSON) + 13 empresas nuevas
-  - prices.py: SYMBOL_COMMODITY + 90 días histórico descargado (150 precios, 1350 valuaciones)
-  - comex.py: NCM map (cap.74 cobre, cap.27 natgas, cap.10 trigo) + 108 registros
-  - variables.py: retenciones cobre 3%, gas 0%, trigo 12% + fix duplicados ENSO
-  - summary.py + alerts.py: COMMODITIES extendido a 6
-  - theme.ts: colores copper/natgas/wheat
-  - CommodityCard + PriceChart: PRIMARY_PRICE_TYPE para los 3 nuevos
-  - ImpactRadar: COMMODITY_VARS + VARIABLE_META para copper/natgas/wheat
-  - TradeFlowChart: NCM_LABELS para los 3 nuevos
-- Fix crítico variables API (/impact-variables/latest):
-  - Bug: NULL = NULL es NULL en SQL → ENSO nunca aparecía
-  - Fix: usar iv.commodity_id IS latest.commodity_id en JOIN
-  - Fix: query reestructurada con subquery correlacionada + GROUP BY para deduplicar
-  - Fix: ENSO pipeline usa SELECT EXISTS en lugar de INSERT OR IGNORE (evita duplicados NULL)
-  - 914 registros duplicados de ENSO eliminados de DB
-- TypeScript: tsc --noEmit sin errores
-
-**Notas de Sesión 8:**
-- Backend corre en puerto 8000 (no 8001 — el proceso viejo en 8001 fue eliminado)
-- Verificar que vite.config.ts proxy apunta a 8000 antes de iniciar frontend
-- FRED API key sigue sin configurar → fed_funds_rate, broad_dollar_idx, cpi_us muestran "—"
-- BCRA API retorna 400 con fechas 2026 → tc_oficial_usd_ars vacío (endpoint variable 4 puede haber cambiado)
-- Para nuevos commodities: noticias, summaries y alerts estarán vacíos hasta correr news/summary/alerts pipelines
-
-**Pendiente para Sesión 10:**
-- Deploy backend en Fly.io
-- Deploy frontend en Vercel/GitHub Pages
-- Cron en producción para pipelines
-- Correr news pipeline para feeds de copper/natgas/wheat y luego summary + alerts
-- Investigar BCRA API si el retry automático no resuelve el 400 (probar variable IDs alternativos)
-
----
-
-### Sesión 6 — 2026-04-12
-**Completado:**
-- backend/pipelines/variables.py: nuevo pipeline con 2 sub-pipelines
-  - ENSOPipeline: descarga NOAA ONI (oni.ascii.txt) — 914 registros desde 1950
-    Mapeo SEAS→mes central, guardado como variable_name='enso_oni', commodity_id=NULL
-  - RetencionesPipeline: datos estáticos AFIP/decreto
-    Soja 33% (Decreto 230/2020), Oro 12% (Res. 61/2022), Litio 4.5% (Decreto 206/2023)
-- frontend/src/types/index.ts: interfaz ImpactVariable agregada
-- frontend/src/utils/api.ts: api.variables.latest() y api.variables.history()
-- frontend/src/components/ImpactRadar.tsx: nuevo componente
-  Panel de cards (auto-fill grid) con: Fed Rate, DXY, TC Oficial, ENSO/ONI, Retenciones
-  ENSO con coloreo por umbral (El Niño amber / La Niña blue / Neutro slate)
-  Tooltip con descripción de fuente en cada card
-- Dashboard.tsx: integración de ImpactRadar (full width entre TradeFlowChart y empresas)
-  Mobile responsive: useIsMobile hook (breakpoint 768px) → grids colapsan a 1 columna
-  Padding lateral adaptativo (32px → 16px en mobile)
-- TypeScript: tsc --noEmit sin errores
-
-**Notas de Sesión 6:**
-- NOAA ONI cambió formato: solo 4 columnas (SEAS YR TOTAL ANOM), ANOM en índice 3
-  (no 7 columnas como en versiones anteriores — fix aplicado)
-- Fed Rate y DXY ya están en impact_variables vía FREDPipeline (prices.py) → no duplicados
-- ENSO almacenado con commodity_id=NULL (global); ImpactRadar lo muestra para todos los commodities
-- Retenciones son punto en el tiempo (fecha vigencia), no serie histórica → 1 registro por commodity
-- useIsMobile hook: window.innerWidth < 768px, con addEventListener('resize') + cleanup
+- **Backend:** Python + FastAPI + SQLite (`backend/db/commodity_monitor.db`)
+- **Pipelines:** precios (yfinance), noticias (RSS + LLM Groq/Cerebras/Mistral), comex (INDEC ZIPs + datos.gob.ar), variables macro (ENSO, TC, DXY, retenciones)
+- **Frontend:** React + TypeScript + Recharts
+- **Deploy:** Render (backend), GitHub Pages (frontend, CI automático en push)
+- **LLM:** Groq → Cerebras → Mistral (rotación con fallback, NO Anthropic API)
 
 ---
 
 ## LOG DE SESIONES
 
-### Sesión 1 — 2026-04-12
+### Sesión 14 — 2026-04-13
 **Completado:**
-- Estructura de directorios
-- schema.sql (incluye `company_valuations`)
-- init_db.py con seed de commodities, actores y empresas con tickers
-- config.py
-- base_pipeline.py
-- prices.py (yfinance: commodities + empresas; BCRA; FRED)
-- requirements.txt
+- Commit baseline de sesión 13
+- ZIPs INDEC movidos de root a `data/comex_indec/` (ignorado por .gitignore — local only)
+- `comex_indec.py`: COMEX_DIR ahora relativo (`data/comex_indec/`), YEAR_FILES extendido a 2020–2026 con `_year_entry()` genérico
+- Fix bug #2 importaciones: `idx_trade_unique` corregido con `COALESCE(country_origin,'')` en schema.sql y DB local (DROP + recrear + borrar 88 registros malos)
+- `_insert_aggregates` extendido para cubrir imports además de exports
+- Pipeline corrido completo: 23,882 nuevos registros, 342 periodos export + 631 periodos import (2020-01 → 2026-02)
+- Verificación: soja 2024 importaciones muestra 73 países (Paraguay $2710M, Uruguay $200M, Brasil $65M...)
 
-**Notas de Sesión 1:**
-- ALTM (Arcadium Lithium) y PLL (Piedmont) están delistados → removidos de COMPANY_TICKERS
-- Arcadium fue adquirida por Rio Tinto en 2025, no hay ticker sucesor cotizando aún
-- Precios funcionando: Oro $4.787 USD/oz, empresas OK (ALB $173, SQM $82, Barrick $43)
-- 71 registros en DB: 21 precios commodity + 50 valuaciones empresa
-
-**Pendiente para Sesión 2:**
-- API FastAPI (main.py + routes): /prices, /commodities, /companies, /impact-variables ✓
-- Frontend básico: Dashboard con 3 CommodityCards + PriceChart (recharts) + CompanyValuationPanel ✓
+**Notas:**
+- Los ZIPs locales están en `data/comex_indec/` — no van al repo (`.gitignore`). Para replicar en otra máquina, descargar ZIPs de INDEC manualmente.
+- El fix del UNIQUE index solo está aplicado en la DB local. La DB de Render se recrea con `startup.sh` en cada deploy (usa `init_db.py` + pipelines) — automáticamente tendrá el index correcto.
+- La DB de Render no tendrá datos de `comex_indec.py` (ZIPs locales). Ver #1 en pendientes.
 
 ---
 
-### Sesión 2 — 2026-04-12
+### Sesión 13 — 2026-04-12
 **Completado:**
-- backend/api/main.py: FastAPI app con CORS, monta los 4 routers
-- backend/api/routes/commodities.py: GET /commodities/, GET /commodities/{id}
-- backend/api/routes/prices.py: GET /prices/{id}/latest, GET /prices/{id}?days=N
-- backend/api/routes/companies.py: GET /companies/, GET /companies/{id}, GET /companies/{id}/valuations?days=N
-- backend/api/routes/variables.py: GET /impact-variables/, GET /impact-variables/latest
-- run.py: entry point uvicorn (python run.py)
-- frontend/package.json + vite.config.ts + tsconfig.json
-- frontend/src/types/index.ts: tipos Commodity, Price, Company, Valuation
-- frontend/src/utils/api.ts: cliente fetch con proxy /api → localhost:8000
-- frontend/src/components/CommodityCard.tsx: precio actual + variación
-- frontend/src/components/PriceChart.tsx: AreaChart recharts con selector 1M/3M/6M/1A
-- frontend/src/components/CompanyValuationPanel.tsx: tabla empresas + precio acción + mkt cap
-- frontend/src/components/Dashboard.tsx: layout completo
-- frontend/src/App.tsx + main.tsx
+- `backend/pipelines/comex_indec.py`: nuevo pipeline que lee ZIPs locales INDEC (mensuales, NCM 8 dígitos) y genera registros bilaterales + agregados `indec_local_agg`
+- `backend/api/routes/trade.py`: filtro `flow_type='export'` + `country IS NULL` en endpoint `/trade-flows/`
+- `backend/db/schema.sql`: UNIQUE index en `companies(commodity_id, name)` para evitar duplicados en re-runs de init_db
+- `backend/pipelines/variables.py`: retenciones actualizadas Decreto 877/2025
+- `frontend/src/components/PriceChart.tsx`, `TradePartnersChart.tsx`: ajustes visuales
 
-**Pendiente para Sesión 3:**
-- Instalar dependencias: cd frontend && npm install
-- Levantar backend: python run.py (requiere .env con FRED_API_KEY, etc.)
-- Levantar frontend: cd frontend && npm run dev
-- Verificar datos reales en dashboard
-- Fase 2: Scraper RSS + clasificador LLM + NewsPanel
+**Notas:**
+- `comex_indec.py` inicialmente solo cubría 2024-2026 y solo exports. Sesión 14 lo extendió.
 
 ---
 
-## NOTAS TÉCNICAS CLAVE
-
-### AI / LLM
-- Proveedor principal: **Groq** (más rápido y barato para clasificación)
-- Fallback 1: **Cerebras**
-- Fallback 2: **Mistral**
-- Lógica de rotación en: `backend/pipelines/llm_client.py`
-- Variables de entorno: `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `MISTRAL_API_KEY`
-
-### Empresas con valuación trackeada
-Ver tabla `company_valuations` en DB y seed en `init_db.py`.
-
-**Litio:** ALB (Albemarle), SQM, ALTM (Arcadium), LAC, PLL, GNENF (Ganfeng OTC)
-**Oro:** GOLD (Barrick), NEM (Newmont), PAAS (Pan American Silver), AEM (Agnico Eagle)
-**Soja:** BG (Bunge), ADM, VITOL (privada/skip), AGD (no listada), LDC (privada/skip)
-
-### NCMs monitoreados
-- Litio: 2836.91.00, 2825.20.00
-- Oro: 7108.12.10, 7108.13.10
-- Soja: 1201.90.00, 1507.10.00, 2304.00.00
-
-### Puertos/endpoints externos
-- BCRA: https://api.bcra.gob.ar/estadisticas/v3.0/
-- FRED: https://fred.stlouisfed.org/ (API key requerida)
-- yfinance: sin key
-- Groq: https://api.groq.com/
+### Sesión 12 — 2026-04-12
+**Completado:**
+- Nuevos commodities: maíz (ZC=F)
+- Fix ticker cobre: HG=F (antes CU=F — no existe en yfinance)
+- `comex_bilateral.py`: socios comerciales bilaterales desde comex-IED/products.json
+- `TradePartnersChart.tsx`: rediseño con toggle export/import y selector de año
+- `ImpactRadar`: tendencias (flechas ↑↓) para variables con histórico
+- Fix varios bugs UI en gráficos de exportaciones
 
 ---
 
-## CÓMO RETOMAR UNA SESIÓN
+### Sesión 11 — 2026-04-12
+**Completado:**
+- Deploy backend en **Render** (free tier): `render.yaml` + `startup.sh`
+- `startup.sh`: init DB + todos los pipelines al arrancar el servicio
+- Rename proyecto: "Pisubí" → "Comm-Track" en header, API title, frontend
+- Dockerfile actualizado para usar `startup.sh` como CMD
 
-1. Leer este archivo
-2. Ver el último ítem completado en el log
-3. Retomar desde "Pendiente para Sesión X"
-4. Al finalizar: actualizar este archivo con lo completado y lo pendiente
+**Notas:**
+- Backend URL en Render: configurar `VITE_API_URL` en GitHub repo vars → CI re-deploya frontend
+- La DB de Render se recrea en cada deploy (SQLite sin persistencia). Pipelines corren en startup.
+
+---
+
+### Sesión 10 — 2026-04-12
+**Completado:**
+- Repo GitHub creado: https://github.com/auparrino/comm-track
+- `.gitignore`: excluye `.env`, `*.db`, `node_modules`, `dist`, `data/`
+- `frontend/package.json`: homepage, scripts `build:ghpages` + deploy, devDeps gh-pages
+- `vite.config.ts`: `base=/comm-track/` cuando `DEPLOY_TARGET=ghpages`
+- `api.ts`: `VITE_API_URL` env var para backend prod
+- `.github/workflows/deploy-frontend.yml`: CI auto-deploy en push a master
+- Build + deploy a GitHub Pages: https://auparrino.github.io/comm-track/
+
+---
+
+### Sesión 9 — 2026-04-12
+**Completado:**
+- Fix crítico: `config.py` no llamaba `load_dotenv()` → API keys nunca se cargaban
+- `YahooMacroPipeline`: reemplaza `BCRAPipeline` (API BCRA v3.0 deprecada 2025). Fuentes: `USDARS=X` (TC), `DX-Y.NYB` (DXY), `^IRX` (Fed proxy)
+- `FREDPipeline`: conservado, se omite si `FRED_API_KEY` vacío
+- Fix feeds RSS copper: `copper-price/feed` → 200
+- `news.py`: commodities reconocidos extendido a 6 (copper, natgas, wheat)
+- Reclasificación LLM completa (57 artículos), alertas y resúmenes re-generados para los 6 commodities
+
+---
+
+### Sesión 8 — 2026-04-12
+**Completado:**
+- Nuevos commodities: cobre (`HG=F`), gas natural (`NG=F`), trigo (`ZW=F`)
+- `init_db.py`: seed 13 empresas nuevas (FCX, SCCO, YPF, TTE, PAM...)
+- `comex.py`: NCM map cap.74 / cap.27 / cap.10
+- `variables.py`: retenciones cobre 3%, gas 0%, trigo 12%
+- Fix crítico variables API: `NULL = NULL` en SQL → ENSO nunca aparecía. Fix con subquery correlacionada.
+- `theme.ts`: colores copper/natgas/wheat
+
+---
+
+### Sesiones 1–7 — 2026-04-12
+Ver historial git (`git log --oneline`) para detalle. Resumen:
+- S1: estructura, schema, init_db, prices pipeline
+- S2: API FastAPI (5 endpoints), frontend básico (CommodityCard, PriceChart, CompanyValuationPanel)
+- S3: news scraper RSS + LLM classifier, NewsPanel
+- S4: rediseño estético editorial (crema/navy), fix asignación commodity LLM
+- S5: pipeline comex.py (datos.gob.ar NCM 2 dígitos), TradeFlowChart, feeds RSS actualizados
+- S6: variables pipeline (ENSO NOAA, retenciones), ImpactRadar, mobile responsive
+- S7: summary.py (LLM semanal), alerts.py, comex_bilateral.py, TradePartnersChart, Dockerfile
+
+---
+
+## ARCHIVOS CLAVE
+
+```
+backend/
+  api/routes/trade.py          ← endpoints /trade-flows/, /partners
+  db/schema.sql                ← schema completo (UNIQUE index trade_flows corregido en s14)
+  db/init_db.py                ← seed de commodities, empresas, init schema
+  pipelines/
+    comex_indec.py             ← ZIPs INDEC locales (data/comex_indec/, 2020-2026)
+    comex.py                   ← datos.gob.ar NCM mensual (funciona en Render)
+    comex_bilateral.py         ← comex-IED anual (funciona en Render)
+    prices.py                  ← yfinance commodities + empresas
+    news.py                    ← RSS + LLM classifier (Groq/Cerebras/Mistral)
+    variables.py               ← ENSO, retenciones, macro
+    summary.py                 ← resumen semanal LLM
+    alerts.py                  ← alertas de señales
+
+frontend/src/components/
+  TradeFlowChart.tsx           ← barras apiladas exportaciones mensuales
+  TradePartnersChart.tsx       ← socios bilaterales top-10
+  PriceChart.tsx               ← precio histórico con rangos
+  NewsPanel.tsx                ← noticias + resumen IA integrado
+  CompanyValuationPanel.tsx    ← empresas con Δ1S y badge de rol
+  ImpactRadar.tsx              ← variables macro (ENSO, TC, DXY, retenciones)
+
+render.yaml                    ← config deploy Render
+startup.sh                     ← init DB + pipelines al iniciar en Render
+data/comex_indec/              ← ZIPs INDEC locales (ignorados por .gitignore)
+MEJORAS.md                     ← roadmap completo fases A–G (sesiones 15–24)
+```
+
+---
+
+## NOTAS TÉCNICAS
+
+- **LLM:** Groq → Cerebras → Mistral. Lógica en `backend/pipelines/llm_client.py`. NO usar Anthropic API.
+- **SQLite en Render:** la DB se recrea en cada deploy. `startup.sh` corre `init_db.py` + todos los pipelines. Datos persisten solo mientras el servicio está vivo.
+- **ZIPs INDEC:** locales en `data/comex_indec/`, no van al repo. `comex.py` (datos.gob.ar) sí funciona en Render para datos históricos hasta ~Feb 2025.
+- **Backend puerto:** 8000. `vite.config.ts` proxy apunta a 8000.
+- **UNIQUE index trade_flows:** corregido en s14 — incluye `COALESCE(country_origin,'')` y `COALESCE(country_dest,'')`.
+- **Tickers problemáticos:** ALTM (Arcadium, delistado 2025), PLL (Piedmont, delistado) → ticker=NULL en DB.
