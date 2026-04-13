@@ -27,6 +27,7 @@ export const T = {
     copper:  '#9A3412',   // terracota/rojizo (cobre)
     natgas:  '#0F766E',   // teal (energía)
     wheat:   '#A16207',   // ocre/dorado (trigo)
+    corn:    '#D97706',   // ámbar (maíz)
   } as Record<string, string>,
 
   // Colores semánticos (light mode)

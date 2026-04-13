@@ -30,6 +30,10 @@ COMMODITY_NCM: dict[str, list[str]] = {
     "lithium": ["28"],
     "gold":    ["71"],
     "soy":     ["12", "15", "23"],
+    "copper":  ["74"],
+    "natgas":  ["27"],
+    "wheat":   ["10"],
+    "corn":    ["10"],   # Cap.10 = cereales (incluye trigo + maíz al nivel 2 dígitos)
 }
 
 

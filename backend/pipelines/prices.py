@@ -43,9 +43,10 @@ class YahooCommoditiesPipeline(BasePipeline):
         "ZM=F":  ("soy",     "futures"),   # harina — lo guardamos igual con price_type distinto
         "ZL=F":  ("soy",     "futures"),   # aceite
         "LIT":   ("lithium", "etf"),       # proxy ETF litio (no hay futures directos)
-        "CU=F":  ("copper",  "futures"),
+        "HG=F":  ("copper",  "futures"),   # COMEX High-Grade Copper (CU=F es ticker inactivo)
         "NG=F":  ("natgas",  "futures"),
         "ZW=F":  ("wheat",   "futures"),
+        "ZC=F":  ("corn",    "futures"),
     }
     # Para aceite y harina usamos sufijos específicos
     SYMBOL_OVERRIDES = {

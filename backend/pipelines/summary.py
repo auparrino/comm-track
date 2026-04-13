@@ -26,6 +26,7 @@ COMMODITIES = {
     "copper":  "Cobre",
     "natgas":  "Gas Natural",
     "wheat":   "Trigo",
+    "corn":    "Maíz",
 }
 
 

@@ -10,6 +10,7 @@ const PRIMARY_PRICE_TYPE: Record<string, string> = {
   copper:  'futures',
   natgas:  'futures',
   wheat:   'futures',
+  corn:    'futures',
 }
 
 const LABELS: Record<string, string> = {

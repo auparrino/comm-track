@@ -63,6 +63,12 @@ COMMODITY_NCM_MAP: dict[str, list[tuple[str, str]]] = {
     "wheat": [
         ("10", "x_cereales"),
     ],
+    # Nota: cap.10 incluye todos los cereales (maíz + trigo + sorgo).
+    # Al nivel 2 dígitos no es posible separar maíz de trigo; ambos comparten
+    # la misma columna. El gráfico refleja el total del capítulo NCM 10.
+    "corn": [
+        ("10", "x_cereales"),
+    ],
 }
 
 # Unidad del CSV: millones de USD corrientes

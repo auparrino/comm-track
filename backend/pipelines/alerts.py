@@ -27,6 +27,7 @@ COMMODITIES = {
     "copper":  "Cobre",
     "natgas":  "Gas Natural",
     "wheat":   "Trigo",
+    "corn":    "Maíz",
 }
 
 # Por defecto: relevance_score >= 0.7 y direction no neutral

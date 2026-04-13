@@ -158,6 +158,11 @@ class RetencionesPipeline(BasePipeline):
         # Decreto 230/2020 – granos (trigo pan y candeal)
         ("wheat",   "retenciones_trigo",   "2020-09-01", 12.0,
          "Decreto 230/2020 – trigo pan y candeal (posición NCM cap. 10)"),
+
+        # Maíz
+        # Decreto 230/2020 – granos (maíz amarillo y otros)
+        ("corn",    "retenciones_maiz",    "2020-09-01", 12.0,
+         "Decreto 230/2020 – maíz (posición NCM 10.05), alícuota 12%"),
     ]
 
     def __init__(self):

@@ -25,6 +25,7 @@ const NCM_LABELS: Record<string, Record<string, string>> = {
   copper:  { '74': 'Cobre y manuf. (cap.74)' },
   natgas:  { '27': 'Combustibles (cap.27)' },
   wheat:   { '10': 'Cereales (cap.10)' },
+  corn:    { '10': 'Cereales incl. maíz (cap.10)' },
 }
 
 const RANGES = [
@@ -40,9 +41,12 @@ function fmtUSD(v: number): string {
 }
 
 function fmtPeriod(p: string): string {
-  const [y, m] = p.split('-')
+  const parts = p.split('-')
+  if (parts.length === 1) return parts[0]           // anual: '2024' → '2024'
+  const [y, m] = parts
   const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-  return `${months[parseInt(m) - 1]} ${y.slice(2)}`
+  const mi = parseInt(m) - 1
+  return `${Number.isNaN(mi) ? m : (months[mi] ?? m)} ${y.slice(2)}`
 }
 
 interface Props {

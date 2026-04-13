@@ -79,6 +79,18 @@ def seed_commodities(conn: sqlite3.Connection) -> None:
                       ["Molienda","Harina"], ["Harina","Industria alimentaria"],
                       ["Exportación grano","Industria alimentaria"]],
         },
+        "corn": {
+            "nodes": ["Producción campo", "Acopio/Puertos", "Secado/Clasificación",
+                      "Exportación grano", "Molienda húmeda", "Almidón/Fructosa",
+                      "Forraje/Pellets", "Etanol"],
+            "edges": [["Producción campo","Acopio/Puertos"],
+                      ["Acopio/Puertos","Secado/Clasificación"],
+                      ["Secado/Clasificación","Exportación grano"],
+                      ["Secado/Clasificación","Molienda húmeda"],
+                      ["Molienda húmeda","Almidón/Fructosa"],
+                      ["Molienda húmeda","Forraje/Pellets"],
+                      ["Molienda húmeda","Etanol"]],
+        },
     }
 
     commodities = [
@@ -106,6 +118,10 @@ def seed_commodities(conn: sqlite3.Connection) -> None:
          "USD/bu", "agro",
          "Cereal de exportación con fuerte presencia en la región pampeana. Argentina es tercer exportador mundial de harina de trigo.",
          json.dumps(supply_chains["wheat"])),
+        ("corn", "Maíz", "Corn",
+         "USD/bu", "agro",
+         "Cereal de mayor producción en Argentina tras la soja. Principal destino: exportación de grano y subproductos. Región pampeana lidera la producción.",
+         json.dumps(supply_chains["corn"])),
     ]
 
     conn.executemany("""
@@ -182,6 +198,17 @@ def seed_companies(conn: sqlite3.Connection) -> None:
          "Empresa privada. Una de las mayores exportadoras de trigo argentino. No cotiza."),
         ("wheat",   "Cofco International",          None,    None,     "CHN", "Buenos Aires","Complejo Rosario", "trader",    1,
          "Brazo de comercio exterior del estado chino. Gran comprador de trigo y maíz argentino. No cotiza."),
+        # --- MAÍZ ---
+        ("corn",    "Bunge Global SA",              "BG",    "NYSE",   "USA", "Santa Fe",  "Complejo Rosario",  "trader",    1,
+         "Una de las ABCD. Gran capacidad de acopio y exportación de maíz desde el Gran Rosario."),
+        ("corn",    "Archer-Daniels-Midland",       "ADM",   "NYSE",   "USA", "Buenos Aires","Complejo Rosario","trader",    1,
+         "Una de las ABCD. Fuerte presencia en exportación de maíz argentino."),
+        ("corn",    "Cargill (privada)",             None,    None,     "USA", "Santa Fe",  "Complejo Rosario",  "trader",    1,
+         "Empresa privada, no cotiza. Mayor exportadora de maíz argentino junto con otras ABCD."),
+        ("corn",    "Cofco International",           None,    None,     "CHN", "Buenos Aires","Complejo Rosario", "trader",    1,
+         "Brazo de comercio exterior del estado chino. Gran comprador de maíz argentino. No cotiza."),
+        ("corn",    "Aceitera Gral Deheza (AGD)",   None,    None,     "ARG", "Córdoba",   "Gral Deheza",       "processor", 1,
+         "Empresa nacional. Gran exportadora de maíz y subproductos desde el interior."),
     ]
 
     conn.executemany("""

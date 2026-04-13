@@ -145,7 +145,7 @@ class NewsPipeline(BasePipeline):
             # Si hay un único commodity reconocido (no "other"), se usa ese.
             llm_commodities = [
                 c for c in result.get("commodities", [])
-                if c in ("lithium", "gold", "soy", "copper", "natgas", "wheat")
+                if c in ("lithium", "gold", "soy", "copper", "natgas", "wheat", "corn")
             ]
             new_commodity = llm_commodities[0] if len(llm_commodities) == 1 else None
 
@@ -278,7 +278,7 @@ class NewsPipeline(BasePipeline):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Pipeline de noticias Pisubí")
     parser.add_argument("--commodity", default="all",
-                        choices=["all", "lithium", "gold", "soy", "copper", "natgas", "wheat"])
+                        choices=["all", "lithium", "gold", "soy", "copper", "natgas", "wheat", "corn"])
     parser.add_argument("--no-classify", action="store_true",
                         help="Saltar clasificación LLM")
     parser.add_argument("--reclassify", action="store_true",

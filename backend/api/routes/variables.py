@@ -10,14 +10,28 @@ router = APIRouter()
 
 @router.get("/latest")
 def latest_variables(commodity: str | None = Query(default=None)):
-    """Último valor de cada variable de impacto (por commodity si se especifica)."""
+    """Último valor de cada variable de impacto (por commodity si se especifica).
+    Incluye prev_value (valor anterior) para calcular tendencia en el frontend.
+    """
+    _PREV = """
+        (SELECT iv3.value FROM impact_variables iv3
+         WHERE iv3.variable_name = iv.variable_name
+           AND (iv3.commodity_id IS iv.commodity_id)
+           AND iv3.date < iv.date
+         ORDER BY iv3.date DESC LIMIT 1) AS prev_value,
+        (SELECT iv3.date FROM impact_variables iv3
+         WHERE iv3.variable_name = iv.variable_name
+           AND (iv3.commodity_id IS iv.commodity_id)
+           AND iv3.date < iv.date
+         ORDER BY iv3.date DESC LIMIT 1) AS prev_date
+    """
     with get_conn() as conn:
         if commodity:
-            # Devuelve variables específicas del commodity + variables globales (commodity_id IS NULL)
             rows = conn.execute(
-                """
+                f"""
                 SELECT iv.id, iv.commodity_id, iv.variable_name, iv.date,
-                       iv.value, iv.value_text, iv.source, iv.unit
+                       iv.value, iv.value_text, iv.source, iv.unit,
+                       {_PREV}
                 FROM impact_variables iv
                 WHERE (iv.commodity_id = ? OR iv.commodity_id IS NULL)
                   AND iv.date = (
@@ -33,9 +47,10 @@ def latest_variables(commodity: str | None = Query(default=None)):
             ).fetchall()
         else:
             rows = conn.execute(
-                """
+                f"""
                 SELECT iv.id, iv.commodity_id, iv.variable_name, iv.date,
-                       iv.value, iv.value_text, iv.source, iv.unit
+                       iv.value, iv.value_text, iv.source, iv.unit,
+                       {_PREV}
                 FROM impact_variables iv
                 WHERE iv.date = (
                     SELECT MAX(iv2.date)

@@ -54,9 +54,11 @@ COMMODITY_TICKERS = {
     # Litio no tiene futures directos; usamos ETF proxy
     "lithium_etf": {"symbol": "LIT", "type": "etf", "name": "Global X Lithium ETF (proxy)"},
     # Nuevos commodities Sesión 8
-    "copper":  {"symbol": "CU=F",  "type": "futures", "name": "Copper Futures"},
+    "copper":  {"symbol": "HG=F",  "type": "futures", "name": "Copper Futures (COMEX HG)"},
     "natgas":  {"symbol": "NG=F",  "type": "futures", "name": "Natural Gas Futures"},
     "wheat":   {"symbol": "ZW=F",  "type": "futures", "name": "Wheat Futures"},
+    # Maíz — Sesión 12
+    "corn":    {"symbol": "ZC=F",  "type": "futures", "name": "Corn Futures"},
 }
 
 # Empresas con tickers (para valuación)
@@ -138,6 +140,12 @@ RSS_FEEDS = {
         "https://bichosdecampo.com/feed/",               # agro AR (cubre trigo) ✓
         "https://www.cronista.com/rss/agro-negocios/",   # agro-negocios ✓
         "https://www.agrofy.com.ar/blog/feed",           # agro marketplace AR ✓
+    ],
+    "corn": [
+        "https://bichosdecampo.com/feed/",               # agro AR (cubre maíz) ✓
+        "https://www.cronista.com/rss/agro-negocios/",   # agro-negocios ✓
+        "https://www.agrofy.com.ar/blog/feed",           # agro marketplace AR ✓
+        "https://www.infobae.com/tag/agro/feed/",        # agro infobae ✓
     ],
 }
 

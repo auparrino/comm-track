@@ -8,7 +8,7 @@
  *   - ENSO/ONI (NOAA)  — especialmente relevante para soja
  *   - Retenciones AR (AFIP/decreto) — específicas por commodity
  */
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { api } from '../utils/api'
 import { T } from '../utils/theme'
 import type { ImpactVariable } from '../types'
@@ -91,6 +91,12 @@ const VARIABLE_META: Record<string, VarMeta> = {
     description: 'Derechos de exportación — gas natural (Argentina)',
     direction: 'up_bad',
   },
+  retenciones_maiz: {
+    label: 'Retenc. Maíz',
+    format: (v) => `${v.toFixed(1)}%`,
+    description: 'Derechos de exportación — maíz (Decreto 230/2020)',
+    direction: 'up_bad',
+  },
 }
 
 // Variables a mostrar por commodity (orden de aparición)
@@ -101,6 +107,7 @@ const COMMODITY_VARS: Record<string, string[]> = {
   copper:  ['fed_funds_rate', 'broad_dollar_idx', 'tc_oficial_usd_ars', 'enso_oni', 'retenciones_cobre'],
   natgas:  ['fed_funds_rate', 'broad_dollar_idx', 'tc_oficial_usd_ars', 'enso_oni', 'retenciones_gas'],
   wheat:   ['fed_funds_rate', 'broad_dollar_idx', 'tc_oficial_usd_ars', 'enso_oni', 'retenciones_trigo'],
+  corn:    ['fed_funds_rate', 'broad_dollar_idx', 'tc_oficial_usd_ars', 'enso_oni', 'retenciones_maiz'],
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -202,9 +209,11 @@ export function ImpactRadar({ commodityId }: Props) {
                 key={key}
                 label={meta.label}
                 value={value}
+                prevValue={entry?.prev_value}
                 format={meta.format}
                 description={meta.description}
                 isEnso={isEnso}
+                direction={meta.direction}
                 date={entry?.date}
                 source={entry?.source}
               />
@@ -221,24 +230,48 @@ export function ImpactRadar({ commodityId }: Props) {
 interface VarCardProps {
   label: string
   value: number | null
+  prevValue?: number | null
   format: (v: number) => string
   description: string
   isEnso: boolean
+  direction: 'up_bad' | 'up_good' | 'neutral'
   date?: string
   source?: string
 }
 
-function VarCard({ label, value, format, description, isEnso, date, source }: VarCardProps) {
+function VarCard({ label, value, prevValue, format, description, isEnso, direction, date, source }: VarCardProps) {
   const [hovered, setHovered] = useState(false)
 
   const displayValue = value !== null ? format(value) : '—'
 
   let valueColor = T.text
-  if (isEnso && value !== null) {
-    valueColor = ensoColor(value)
+  if (isEnso && value !== null) valueColor = ensoColor(value)
+
+  // Tendencia
+  let deltaEl: React.ReactNode = null
+  if (value !== null && prevValue !== null && prevValue !== undefined) {
+    const delta = value - prevValue
+    const absDelta = Math.abs(delta)
+    const pct = prevValue !== 0 ? (delta / prevValue) * 100 : 0
+    const rising = delta > 0
+    const trendColor =
+      direction === 'neutral'  ? T.muted
+      : direction === 'up_bad'  ? (rising ? T.negative : T.positive)
+      : /* up_good */             (rising ? T.positive : T.negative)
+
+    const arrow = rising ? '▲' : '▼'
+    const fmt = absDelta < 0.01 ? absDelta.toFixed(4)
+              : absDelta < 1    ? absDelta.toFixed(2)
+              : absDelta < 10   ? absDelta.toFixed(1)
+              : absDelta.toFixed(0)
+
+    deltaEl = (
+      <span style={{ fontSize: 10, color: trendColor, fontWeight: 600, marginLeft: 5 }}>
+        {arrow} {fmt} ({pct > 0 ? '+' : ''}{pct.toFixed(1)}%)
+      </span>
+    )
   }
 
-  // Formatear fecha como mes/año
   const dateLabel = date
     ? new Date(date + 'T12:00:00').toLocaleDateString('es-AR', { month: 'short', year: '2-digit' })
     : null
@@ -262,14 +295,24 @@ function VarCard({ label, value, format, description, isEnso, date, source }: Va
       </div>
       <div
         style={{
-          fontSize: 18,
-          fontWeight: 700,
-          fontFamily: T.mono,
-          color: valueColor,
-          lineHeight: 1.1,
+          display: 'flex',
+          alignItems: 'baseline',
+          flexWrap: 'wrap',
+          gap: 0,
         }}
       >
-        {displayValue}
+        <span
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            fontFamily: T.mono,
+            color: valueColor,
+            lineHeight: 1.1,
+          }}
+        >
+          {displayValue}
+        </span>
+        {deltaEl}
       </div>
       {isEnso && value !== null && (
         <div style={{ fontSize: 10, color: valueColor, marginTop: 3, fontWeight: 500 }}>

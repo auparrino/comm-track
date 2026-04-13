@@ -108,6 +108,8 @@ export interface ImpactVariable {
   value_text: string | null
   source: string
   unit: string | null
+  prev_value?: number | null   // valor del período anterior (para calcular tendencia)
+  prev_date?: string | null
 }
 
 export interface Valuation {
