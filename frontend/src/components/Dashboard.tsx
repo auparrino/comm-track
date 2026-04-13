@@ -11,6 +11,7 @@ import { ImpactRadar } from './ImpactRadar'
 import { AlertBanner } from './AlertBanner'
 import { TradePartnersChart } from './TradePartnersChart'
 import { AdminPanel } from './AdminPanel'
+import { CorrelationHeatmap } from './CorrelationHeatmap'
 
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
@@ -198,6 +199,11 @@ export function Dashboard() {
             <NewsPanel commodityId={current.id} />
           </div>
         )}
+
+        {/* Correlaciones cruzadas — sección global */}
+        <div style={{ marginTop: 20 }}>
+          <CorrelationHeatmap />
+        </div>
       </main>
     </div>
   )

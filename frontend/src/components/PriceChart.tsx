@@ -10,7 +10,14 @@ import {
 } from 'recharts'
 import { api } from '../utils/api'
 import { T } from '../utils/theme'
-import type { Price } from '../types'
+import type { Price, MarketRegime, RegimeLabel } from '../types'
+
+const REGIME_STYLE: Record<RegimeLabel, { bg: string; color: string; label: string }> = {
+  ALCISTA: { bg: '#dcfce7', color: '#15803d', label: '↑ Alcista'  },
+  BAJISTA: { bg: '#fee2e2', color: '#b91c1c', label: '↓ Bajista'  },
+  LATERAL: { bg: '#f1f5f9', color: '#5C7A8A', label: '→ Lateral'  },
+  VOLÁTIL: { bg: '#fff7ed', color: '#c2410c', label: '⚡ Volátil' },
+}
 
 const PRIMARY_PRICE_TYPE: Record<string, string> = {
   gold:    'futures',
@@ -39,6 +46,7 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
   const [data, setData]       = useState<Price[]>([])
   const [days, setDays]       = useState(90)
   const [loading, setLoading] = useState(true)
+  const [regime, setRegime]   = useState<MarketRegime | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -48,6 +56,10 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
       .catch(() => setData([]))
       .finally(() => setLoading(false))
   }, [commodityId, days])
+
+  useEffect(() => {
+    api.prices.regime(commodityId).then(setRegime).catch(() => setRegime(null))
+  }, [commodityId])
 
   const color     = T.colors[commodityId] ?? T.blue
   const chartData = data.map((p) => ({ date: p.date, price: p.price }))
@@ -74,7 +86,7 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
           marginBottom:   18,
         }}
       >
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ color: T.text, fontWeight: 600, fontSize: 15 }}>
             {nameEs}
           </span>
@@ -82,12 +94,33 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
             style={{
               color:      T.faint,
               fontSize:   11,
-              marginLeft: 8,
               fontFamily: T.mono,
             }}
           >
             {unit}
           </span>
+          {regime && (() => {
+            const s = REGIME_STYLE[regime.regime]
+            return (
+              <span
+                title={`SMA20: ${regime.sma20 ?? '—'} · SMA50: ${regime.sma50 ?? '—'} · SMA200: ${regime.sma200 ?? '—'}`}
+                style={{
+                  background:   s.bg,
+                  color:        s.color,
+                  fontSize:     11,
+                  fontWeight:   700,
+                  padding:      '2px 8px',
+                  borderRadius: 12,
+                  fontFamily:   T.sans,
+                  letterSpacing: '0.02em',
+                  cursor:       'default',
+                  border:       `1px solid ${s.color}22`,
+                }}
+              >
+                {s.label}
+              </span>
+            )
+          })()}
         </div>
 
         {/* Range selector */}

@@ -131,6 +131,33 @@ export interface Valuation {
   commodity_id: string
 }
 
+export interface CorrelationEntry {
+  c1: string
+  c2: string
+  r: number | null
+  n: number
+}
+
+export interface CorrelationMatrix {
+  window: number
+  commodities: string[]
+  matrix: CorrelationEntry[]
+}
+
+export type RegimeLabel = 'ALCISTA' | 'BAJISTA' | 'LATERAL' | 'VOLÁTIL'
+
+export interface MarketRegime {
+  commodity_id: string
+  regime: RegimeLabel
+  current_price: number
+  sma20: number | null
+  sma50: number | null
+  sma200: number | null
+  boll_upper: number | null
+  boll_lower: number | null
+  n_days: number
+}
+
 export interface PipelineStatus {
   pipeline_name: string
   description: string
