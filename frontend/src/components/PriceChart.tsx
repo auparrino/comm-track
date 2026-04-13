@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { api } from '../utils/api'
 import { T } from '../utils/theme'
-import type { Price, MarketRegime, RegimeLabel } from '../types'
+import type { Price, MarketRegime, RegimeLabel, TechnicalSignal } from '../types'
 
 const REGIME_STYLE: Record<RegimeLabel, { bg: string; color: string; label: string }> = {
   ALCISTA: { bg: '#dcfce7', color: '#15803d', label: '↑ Alcista'  },
@@ -47,6 +47,7 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
   const [days, setDays]       = useState(90)
   const [loading, setLoading] = useState(true)
   const [regime, setRegime]   = useState<MarketRegime | null>(null)
+  const [signals, setSignals] = useState<TechnicalSignal[]>([])
 
   useEffect(() => {
     setLoading(true)
@@ -59,6 +60,7 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
 
   useEffect(() => {
     api.prices.regime(commodityId).then(setRegime).catch(() => setRegime(null))
+    api.prices.signals(commodityId).then(r => setSignals(r.signals)).catch(() => setSignals([]))
   }, [commodityId])
 
   const color     = T.colors[commodityId] ?? T.blue
@@ -224,6 +226,48 @@ export function PriceChart({ commodityId, nameEs, unit }: Props) {
             />
           </AreaChart>
         </ResponsiveContainer>
+      )}
+
+      {/* Señales técnicas */}
+      {signals.length > 0 && (
+        <div
+          style={{
+            display:   'flex',
+            flexWrap:  'wrap',
+            gap:       6,
+            marginTop: 14,
+            paddingTop: 12,
+            borderTop: `1px solid ${T.hairline}`,
+          }}
+        >
+          {signals.map((s) => {
+            const bull = s.direction === 'bullish'
+            const bg   = bull ? '#dcfce7' : '#fee2e2'
+            const fg   = bull ? '#15803d' : '#b91c1c'
+            const icon = bull ? '▲' : '▼'
+            return (
+              <span
+                key={s.signal}
+                title={s.detail}
+                style={{
+                  background:    bg,
+                  color:         fg,
+                  fontSize:      11,
+                  fontWeight:    700,
+                  padding:       '3px 9px',
+                  borderRadius:  12,
+                  fontFamily:    T.sans,
+                  border:        `1px solid ${fg}22`,
+                  cursor:        'default',
+                  opacity:       s.strength === 'high' ? 1 : 0.8,
+                  letterSpacing: '0.01em',
+                }}
+              >
+                {icon} {s.label}
+              </span>
+            )
+          })}
+        </div>
       )}
     </div>
   )

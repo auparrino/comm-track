@@ -139,6 +139,169 @@ def price_regime(commodity_id: str):
     }
 
 
+# ─── Señales técnicas ────────────────────────────────────────────────────────
+
+def _ema_series(prices: list[float], period: int) -> list[float]:
+    if len(prices) < period:
+        return []
+    k = 2 / (period + 1)
+    result = [sum(prices[:period]) / period]
+    for p in prices[period:]:
+        result.append(p * k + result[-1] * (1 - k))
+    return result
+
+
+def _sma_series(prices: list[float], period: int) -> list[float]:
+    return [
+        sum(prices[i - period:i]) / period
+        for i in range(period, len(prices) + 1)
+    ]
+
+
+def _rsi(prices: list[float], period: int = 14) -> float | None:
+    if len(prices) < period + 1:
+        return None
+    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
+    gains  = [d if d > 0 else 0.0 for d in deltas]
+    losses = [-d if d < 0 else 0.0 for d in deltas]
+    avg_gain = sum(gains[-period:]) / period
+    avg_loss = sum(losses[-period:]) / period
+    if avg_loss == 0:
+        return 100.0
+    rs = avg_gain / avg_loss
+    return 100 - 100 / (1 + rs)
+
+
+@router.get("/{commodity_id}/signals")
+def price_signals(commodity_id: str):
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT date, AVG(price) AS price
+            FROM prices
+            WHERE commodity_id = ?
+              AND date >= date('now', '-400 days')
+            GROUP BY date
+            ORDER BY date ASC
+            """,
+            (commodity_id,),
+        ).fetchall()
+
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"Sin precios para '{commodity_id}'")
+
+    prices = [r["price"] for r in rows]
+    signals = []
+
+    # ── RSI(14) ────────────────────────────────────────────────────────────────
+    rsi = _rsi(prices)
+    if rsi is not None:
+        if rsi < 30:
+            signals.append({
+                "signal":    "RSI_OVERSOLD",
+                "direction": "bullish",
+                "label":     "RSI Sobrevendido",
+                "detail":    f"RSI(14) = {rsi:.1f}",
+                "strength":  "high" if rsi < 20 else "medium",
+            })
+        elif rsi > 70:
+            signals.append({
+                "signal":    "RSI_OVERBOUGHT",
+                "direction": "bearish",
+                "label":     "RSI Sobrecomprado",
+                "detail":    f"RSI(14) = {rsi:.1f}",
+                "strength":  "high" if rsi > 80 else "medium",
+            })
+
+    # ── MACD (12/26/9) ────────────────────────────────────────────────────────
+    ema12 = _ema_series(prices, 12)
+    ema26 = _ema_series(prices, 26)
+    # Alinear al tramo común
+    offset = 26 - 12  # ema26 es más corta en (period-1) elementos
+    if len(ema12) > offset and len(ema26) > 0:
+        macd_line = [ema12[offset + i] - ema26[i] for i in range(len(ema26))]
+        signal_line = _ema_series(macd_line, 9)
+        if len(macd_line) > 9 and len(signal_line) >= 2:
+            # Cruce reciente (último vs penúltimo)
+            macd_tail    = macd_line[-(len(signal_line)):]
+            prev_diff = macd_tail[-2] - signal_line[-2]
+            curr_diff = macd_tail[-1] - signal_line[-1]
+            if prev_diff < 0 < curr_diff:
+                signals.append({
+                    "signal":    "MACD_BULLISH_CROSS",
+                    "direction": "bullish",
+                    "label":     "MACD Cruce Alcista",
+                    "detail":    f"MACD cruzó señal hacia arriba",
+                    "strength":  "medium",
+                })
+            elif prev_diff > 0 > curr_diff:
+                signals.append({
+                    "signal":    "MACD_BEARISH_CROSS",
+                    "direction": "bearish",
+                    "label":     "MACD Cruce Bajista",
+                    "detail":    f"MACD cruzó señal hacia abajo",
+                    "strength":  "medium",
+                })
+
+    # ── Golden / Death Cross (SMA50 × SMA200) ────────────────────────────────
+    sma50  = _sma_series(prices, 50)
+    sma200 = _sma_series(prices, 200)
+    if len(sma50) >= 2 and len(sma200) >= 2:
+        # Alinear: sma200 empieza 150 pasos después de sma50
+        diff_len = len(sma50) - len(sma200)
+        if diff_len >= 0:
+            s50_aligned = sma50[diff_len:]
+            prev50, curr50   = s50_aligned[-2], s50_aligned[-1]
+            prev200, curr200 = sma200[-2], sma200[-1]
+            if prev50 <= prev200 and curr50 > curr200:
+                signals.append({
+                    "signal":    "GOLDEN_CROSS",
+                    "direction": "bullish",
+                    "label":     "Golden Cross",
+                    "detail":    "SMA50 cruzó sobre SMA200",
+                    "strength":  "high",
+                })
+            elif prev50 >= prev200 and curr50 < curr200:
+                signals.append({
+                    "signal":    "DEATH_CROSS",
+                    "direction": "bearish",
+                    "label":     "Death Cross",
+                    "detail":    "SMA50 cruzó bajo SMA200",
+                    "strength":  "high",
+                })
+
+    # ── Bollinger Breakout (SMA20 ± 2σ) ──────────────────────────────────────
+    if len(prices) >= 20:
+        sma20 = sum(prices[-20:]) / 20
+        std   = (sum((p - sma20) ** 2 for p in prices[-20:]) / 20) ** 0.5
+        upper = sma20 + 2 * std
+        lower = sma20 - 2 * std
+        current = prices[-1]
+        if current > upper:
+            signals.append({
+                "signal":    "BOLL_BREAKOUT_UP",
+                "direction": "bullish",
+                "label":     "Bollinger Breakout+",
+                "detail":    f"Precio {current:.2f} > banda sup {upper:.2f}",
+                "strength":  "medium",
+            })
+        elif current < lower:
+            signals.append({
+                "signal":    "BOLL_BREAKOUT_DOWN",
+                "direction": "bearish",
+                "label":     "Bollinger Breakout-",
+                "detail":    f"Precio {current:.2f} < banda inf {lower:.2f}",
+                "strength":  "medium",
+            })
+
+    return {
+        "commodity_id": commodity_id,
+        "signals":      signals,
+        "rsi":          round(rsi, 1) if rsi is not None else None,
+        "n_days":       len(prices),
+    }
+
+
 # ─── Histórico y latest ───────────────────────────────────────────────────────
 
 @router.get("/{commodity_id}/latest")

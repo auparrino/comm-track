@@ -131,6 +131,21 @@ export interface Valuation {
   commodity_id: string
 }
 
+export interface TechnicalSignal {
+  signal: string
+  direction: 'bullish' | 'bearish'
+  label: string
+  detail: string
+  strength: 'high' | 'medium'
+}
+
+export interface SignalsResult {
+  commodity_id: string
+  signals: TechnicalSignal[]
+  rsi: number | null
+  n_days: number
+}
+
 export interface CorrelationEntry {
   c1: string
   c2: string

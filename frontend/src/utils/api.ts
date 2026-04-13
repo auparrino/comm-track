@@ -31,6 +31,8 @@ export const api = {
       get<import('../types').CorrelationMatrix>(`/prices/correlations?window=${window}`),
     regime: (commodityId: string) =>
       get<import('../types').MarketRegime>(`/prices/${commodityId}/regime`),
+    signals: (commodityId: string) =>
+      get<import('../types').SignalsResult>(`/prices/${commodityId}/signals`),
   },
   news: {
     list: (params: { commodity?: string; days?: number; sentiment?: string; signal?: string; limit?: number } = {}) => {
